@@ -6,7 +6,6 @@ from crypto_chat import encrypt_message, decrypt_message
 from PySide6.QtWidgets import (
     QApplication,
     QWidget,
-    QLabel,
     QLineEdit,
     QPushButton,
     QTextEdit,
@@ -206,6 +205,17 @@ class ChatWindow(QWidget):
         self.input_box.setPlaceholderText(
             "Write message..."
         )
+        self.input_box.setStyleSheet("""
+            QLineEdit {
+               border: 1px solid #444;
+               border-radius: 10px;
+               padding-left: 15px;
+               padding-right: 15px;
+               padding-top: 8px;
+               padding-bottom: 8px;
+               font-size: 14px;
+            }
+        """)
         self.send_btn = QPushButton(
             "Send"
         )
@@ -220,9 +230,6 @@ class ChatWindow(QWidget):
             self.send_btn
         )
         layout = QVBoxLayout()
-        layout.addWidget(
-            QLabel("BITX CHAT")
-        )
         layout.addWidget(
             self.chat_box
         )
