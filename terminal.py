@@ -6,41 +6,34 @@ from colorama import init
 from crypto_chat import encrypt_message, decrypt_message
 from prompt_toolkit.application import Application, get_app
 from prompt_toolkit.layout import Layout
-from prompt_toolkit.layout.containers import (
-    HSplit,
-    Window,
-    ScrollablePane
-)
-from prompt_toolkit.layout.controls import FormattedTextControl
-from prompt_toolkit.widgets import (
-    TextArea,
-    Frame
-)
+from prompt_toolkit.layout.containers import HSplit
+from prompt_toolkit.widgets import TextArea, Frame
 from prompt_toolkit.key_binding import KeyBindings
-from prompt_toolkit.layout.dimension import Dimension
 init(autoreset=True)
 server = None
 username = ""
 chat_lines = []
-chat_control = FormattedTextControl(
-    text=""
+chat_window = TextArea(
+    text="",
+    focusable=False,
+    scrollbar=True,
+    wrap_lines=True,
+    read_only=True
 )
-chat_window = Window(
-    content=chat_control,
-    wrap_lines=True
-)
-scroll = ScrollablePane(
-    chat_window,
-    height=Dimension(
-        preferred=20
-    )
+input_field = TextArea(
+    height=1,
+    prompt="> ",
+    multiline=False
 )
 def add_message(text):
     chat_lines.append(text)
     if len(chat_lines) > 500:
         chat_lines.pop(0)
-    chat_control.text = "\n".join(
+    chat_window.text = "\n".join(
         chat_lines
+    )
+    chat_window.buffer.cursor_position = (
+        len(chat_window.text)
     )
     try:
         get_app().invalidate()
@@ -86,36 +79,19 @@ def send_message(buf):
         )
     except:
         add_message(
-            "Send failed."
+            "Send error."
         )
     buf.text = ""
-input_field = TextArea(
-    height=1,
-    prompt="> ",
-    multiline=False
-)
 kb = KeyBindings()
 @kb.add("enter")
 def enter(event):
     send_message(
         input_field
     )
-@kb.add("up")
-def scroll_up(event):
-    try:
-        scroll.vertical_scroll -= 3
-    except:
-        pass
-@kb.add("down")
-def scroll_down(event):
-    try:
-        scroll.vertical_scroll += 3
-    except:
-        pass
 root_container = HSplit(
     [
         Frame(
-            scroll,
+            chat_window,
             title="BITX CHAT"
         ),
         Frame(
@@ -156,7 +132,6 @@ def main():
         (
             server_onion,
             port
-
         )
     )
     server = s
@@ -166,7 +141,6 @@ def main():
     password = input(
         "Password: "
     ).strip()
-
     s.recv(1024)
     s.send(
         encrypt_message(username)
