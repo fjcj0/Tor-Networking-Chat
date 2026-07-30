@@ -6,3 +6,5 @@ chat.key
 global_chat
 global_chat/users_status.enc
 global_chat/secret.key
+secret.key
+__pycache__
