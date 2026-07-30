@@ -14,15 +14,13 @@ server = None
 username = ""
 chat_lines = []
 def recv_full(sock):
-    data = b""
-    while True:
-        part = sock.recv(4096)
-        if not part:
-            break
-        data += part
-        if len(part) < 4096:
-            break
-    return data
+    try:
+        data = sock.recv(8192)
+        if not data:
+            return None
+        return data
+    except:
+        return None
 chat_window = TextArea(
     text="",
     focusable=False,
@@ -35,14 +33,20 @@ input_field = TextArea(
     prompt="> ",
     multiline=False
 )
+
 def add_message(text):
     chat_lines.append(text)
-    if len(chat_lines) > 500:
-        chat_lines.pop(0)
-    chat_window.text = "\n".join(chat_lines)
-    chat_window.buffer.cursor_position = len(
-        chat_window.text
+    if len(chat_lines) >= 10:
+        del chat_lines[:-2]
+    chat_window.text = "\n".join(
+        chat_lines
     )
+    try:
+        chat_window.buffer.cursor_position = len(
+            chat_window.text
+        )
+    except:
+        pass
     try:
         get_app().invalidate()
     except:
@@ -56,22 +60,30 @@ def receive_messages(sock):
                     "Disconnected from server."
                 )
                 break
-            decrypted = decrypt_message(data)
+            decrypted = decrypt_message(
+                data
+            )
             try:
-                msg = json.loads(decrypted)
+                msg = json.loads(
+                    decrypted
+                )
                 text = (
                     f"[{msg['time']}] "
                     f"{msg['sender']}: "
                     f"{msg['message']}"
                 )
-                add_message(text)
+                add_message(
+                    text
+                )
             except:
-                add_message(decrypted)
+                add_message(
+                    decrypted
+                )
         except Exception as e:
             add_message(
-                f"Connection error: {e}"
+                f"Receive error: {e}"
             )
-            break
+            continue
 def send_message(buf):
     global server
     msg = buf.text.strip()
@@ -169,7 +181,9 @@ def main():
                 "Server closed connection."
             )
             return
-        resp = decrypt_message(data)
+        resp = decrypt_message(
+            data
+        )
         if "accepted" in resp.lower():
             add_message(
                 "Connected."
