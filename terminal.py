@@ -13,6 +13,16 @@ init(autoreset=True)
 server = None
 username = ""
 chat_lines = []
+def recv_full(sock):
+    data = b""
+    while True:
+        part = sock.recv(4096)
+        if not part:
+            break
+        data += part
+        if len(part) < 4096:
+            break
+    return data
 chat_window = TextArea(
     text="",
     focusable=False,
@@ -29,11 +39,9 @@ def add_message(text):
     chat_lines.append(text)
     if len(chat_lines) > 500:
         chat_lines.pop(0)
-    chat_window.text = "\n".join(
-        chat_lines
-    )
-    chat_window.buffer.cursor_position = (
-        len(chat_window.text)
+    chat_window.text = "\n".join(chat_lines)
+    chat_window.buffer.cursor_position = len(
+        chat_window.text
     )
     try:
         get_app().invalidate()
@@ -42,21 +50,23 @@ def add_message(text):
 def receive_messages(sock):
     while True:
         try:
-            data = sock.recv(8192)
+            data = recv_full(sock)
             if not data:
                 add_message(
                     "Disconnected from server."
                 )
                 break
-            msg = json.loads(
-                decrypt_message(data)
-            )
-            text = (
-                f"[{msg['time']}] "
-                f"{msg['sender']}: "
-                f"{msg['message']}"
-            )
-            add_message(text)
+            decrypted = decrypt_message(data)
+            try:
+                msg = json.loads(decrypted)
+                text = (
+                    f"[{msg['time']}] "
+                    f"{msg['sender']}: "
+                    f"{msg['message']}"
+                )
+                add_message(text)
+            except:
+                add_message(decrypted)
         except Exception as e:
             add_message(
                 f"Connection error: {e}"
@@ -74,12 +84,12 @@ def send_message(buf):
             pass
         os._exit(0)
     try:
-        server.send(
+        server.sendall(
             encrypt_message(msg)
         )
-    except:
+    except Exception as e:
         add_message(
-            "Send error."
+            f"Send error: {e}"
         )
     buf.text = ""
 kb = KeyBindings()
@@ -141,21 +151,25 @@ def main():
     password = input(
         "Password: "
     ).strip()
-    s.recv(1024)
-    s.send(
+    recv_full(s)
+    s.sendall(
         encrypt_message(username)
     )
-    s.recv(1024)
-    s.send(
+    recv_full(s)
+    s.sendall(
         encrypt_message(password)
     )
     add_message(
         "Waiting for approval..."
     )
     while True:
-        resp = decrypt_message(
-            s.recv(1024)
-        )
+        data = recv_full(s)
+        if not data:
+            add_message(
+                "Server closed connection."
+            )
+            return
+        resp = decrypt_message(data)
         if "accepted" in resp.lower():
             add_message(
                 "Connected."
