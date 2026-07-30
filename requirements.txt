@@ -1,4 +1,4 @@
-cryptography==41.0.3
-pysocks==1.7.1
+PySide6
+PySocks
 colorama
-prompt_toolkit
+prompt-toolkit
