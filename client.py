@@ -1,5 +1,5 @@
-import socks
 import threading
+import socks
 import json
 import os
 from crypto_chat import encrypt_message, decrypt_message
@@ -85,11 +85,22 @@ class ConnectWindow(QWidget):
         self.connect_btn = QPushButton(
             "Connect"
         )
+        inputs = [
+            self.server_input,
+            self.port_input,
+            self.username_input,
+            self.password_input
+        ]
+        for field in inputs:
+            field.setMinimumHeight(40)
         layout = QVBoxLayout()
-        title = QLabel(
-            "BITX CHAT SERVER"
+        layout.setSpacing(12)
+        layout.setContentsMargins(
+            60,
+            50,
+            60,
+            50
         )
-        layout.addWidget(title)
         layout.addWidget(
             self.server_input
         )
@@ -102,20 +113,29 @@ class ConnectWindow(QWidget):
         layout.addWidget(
             self.password_input
         )
+        layout.addSpacing(10)
         layout.addWidget(
             self.connect_btn
         )
-        self.setLayout(layout)
+        self.setLayout(
+            layout
+        )
+        self.setStyleSheet("""
+            QLineEdit {
+                border: 1px solid #444;
+                border-radius: 10px;
+                padding-left: 12px;
+                padding-right: 12px;
+                font-size: 14px;
+            }
+        """)
         self.connect_btn.clicked.connect(
             self.connect_server
         )
     def connect_server(self):
         global server, username
         try:
-            onion = (
-                self.server_input.text()
-                .strip()
-            )
+            onion = self.server_input.text().strip()
             port = int(
                 self.port_input.text()
             )
